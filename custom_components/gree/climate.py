@@ -1,20 +1,13 @@
 #!/usr/bin/python
-# Do basic imports
-import importlib.util
+
 import socket
 import base64
-import re
-import sys
-
 import asyncio
 import logging
-import binascii
-import os.path
+
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
-
 from homeassistant.components.climate import ClimateEntity, PLATFORM_SCHEMA
-
 from homeassistant.components.climate.const import (
     HVAC_MODE_OFF,
     HVAC_MODE_AUTO,
@@ -26,7 +19,6 @@ from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE,
     SUPPORT_SWING_MODE,
 )
-
 from homeassistant.const import (
     ATTR_UNIT_OF_MEASUREMENT,
     ATTR_TEMPERATURE,
@@ -47,13 +39,12 @@ from homeassistant.const import (
 from homeassistant.helpers.event import async_track_state_change
 from homeassistant.core import callback
 from homeassistant.helpers.restore_state import RestoreEntity
-from configparser import ConfigParser
 from Crypto.Cipher import AES
 
 try:
-    import simplejson
+    import simplejson as json
 except ImportError:
-    import json as simplejson
+    import json
 
 REQUIREMENTS = ["pycryptodome"]
 
@@ -360,7 +351,7 @@ class GreeClimate(ClimateEntity):
         clientSock.settimeout(timeout)
         clientSock.sendto(bytes(json, "utf-8"), (ip_addr, port))
         data, addr = clientSock.recvfrom(64000)
-        receivedJson = simplejson.loads(data)
+        receivedJson = json.loads(data)
         clientSock.close()
         pack = receivedJson["pack"]
         base64decodedPack = base64.b64decode(pack)
@@ -369,7 +360,7 @@ class GreeClimate(ClimateEntity):
         replacedPack = decodedPack.replace("\x0f", "").replace(
             decodedPack[decodedPack.rindex("}") + 1 :], ""
         )
-        loadedJsonPack = simplejson.loads(replacedPack)
+        loadedJsonPack = json.loads(replacedPack)
         return loadedJsonPack
 
     def GetDeviceKey(self):
@@ -401,7 +392,7 @@ class GreeClimate(ClimateEntity):
                 self.CIPHER.encrypt(
                     self.Pad(
                         '{"cols":'
-                        + simplejson.dumps(propertyNames)
+                        + json.dumps(propertyNames)
                         + ',"mac":"'
                         + str(self._mac_addr)
                         + '","t":"status"}'
@@ -461,7 +452,7 @@ class GreeClimate(ClimateEntity):
         clientSock.settimeout(timeout)
         clientSock.sendto(bytes(sentJsonPayload, "utf-8"), (self._ip_addr, self._port))
         data, addr = clientSock.recvfrom(64000)
-        receivedJson = simplejson.loads(data)
+        receivedJson = json.loads(data)
         clientSock.close()
         pack = receivedJson["pack"]
         base64decodedPack = base64.b64decode(pack)
@@ -470,7 +461,7 @@ class GreeClimate(ClimateEntity):
         replacedPack = decodedPack.replace("\x0f", "").replace(
             decodedPack[decodedPack.rindex("}") + 1 :], ""
         )
-        receivedJsonPayload = simplejson.loads(replacedPack)
+        receivedJsonPayload = json.loads(replacedPack)
         _LOGGER.info("Done sending state to HVAC: " + str(receivedJsonPayload))
 
     def UpdateHATargetTemperature(self):
